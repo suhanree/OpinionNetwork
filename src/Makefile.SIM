@@ -1,0 +1,170 @@
+# 
+# 	Filename : Makefile.SIM
+#
+#	Author : Suhan Ree
+#	Date   : 06-04-2004
+
+# Sub-Makefile for the SIM module of RW.
+# This file will be executed in the 'RW' directory by the main Makefile.
+#	(Or you can use make this module by executing 'make -f Makefile.SIM'
+#	 from the directory this makefile is in. The variables exported from
+#	 the main Makefile can be given in the command line.)
+# Some variables (COMPILER, MPI, DEBUG, OPTIMIZE) are exported from the main makefile.
+
+ifndef COMPILER
+   COMPILER=GCC
+endif
+
+# When MPI is NOT used, assigning the compiler (GCC=g++, CC=c++)
+# When MPI is used, assigning the MPI compilers (hcc, mpicc)
+ifeq ($(MPI),none)
+   ifeq ($(COMPILER),GCC)
+   	CXX = g++
+   else 
+   	ifeq ($(COMPILER),CC)
+      	   CXX = c++
+   	endif
+   endif
+else
+   ifeq ($(MPI),LAM)
+   	CXX = /usr/bin/hcp
+   else
+   	ifeq ($(MPI),MPICH)
+	   CXX = /usr/local/mpich/bin/mpiCC
+	endif
+   endif
+endif
+
+# setting paths for files used as targets or dependencies.
+vpath %.o ../obj
+vpath %.h ../include
+vpath %   ../bin
+
+# defining the name of the object files.
+objects := Random1.o Random2.o Random3.o Random4.o
+objects += Graph.o GraphND1.o DiGraph1.o
+objects += Point.o
+objects += Input.o InputParam.o Output.o
+objects += Utilities.o Clock.o
+objects += RWMain.o
+objects += RWState.o RWRule.o RWIn.o RWOut.o RWUtil.o
+
+# defining the name of the header files.
+headers := Random.h Random1.h Random2.h Random3.h Random4.h
+headers += Graph.h GraphND1.h DiGraph1.h
+headers += Point.h
+headers += Agent.h
+headers += Input.h InputParam.h Output.h
+headers += Utilities.h Clock.h Errors.h Types.h
+headers += RWState.h RWRule.h RWIn.h RWOut.h RWUtil.h RWTypes.h RWErrors.h
+headers += RWMain.h
+
+# The name of the executable.
+name = RW2Sim
+
+# For debugging, names of object files will have the '.debug.o' extension 
+# (not implemented at this point, execute 'make clean' first before using DEBUG=1)
+ifeq ($(DEBUG),1)
+#   objects := $(patsubst %.o, %.debug.o, $(objects))
+   name := $(addsuffix .debug, $(name))
+   CXXFLAGS := $(CXXFLAGS) -g
+else
+   CXXFLAGS := -O$(OPTIMIZE) 	# When not debugging, turn the optimization on.
+endif
+
+# path for the header files.
+CXXFLAGS += -I../include
+
+#defining object filenames with correct paths.
+objs_with_path := $(addprefix ../obj/,$(objects))
+
+
+# Primary Targets:
+
+$(name) : $(objects)
+	@ echo $(name) " (linking...)"
+	@ $(CXX) $(CXXFLAGS) $(objs_with_path) -o ../bin/$(name)
+#       @ cp ../bin/$(name) ~/bin
+
+Random1.o : sim/ran/Random1.C Random1.h Random.h Errors.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Random2.o : sim/ran/Random2.C Random2.h Random.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Random3.o : sim/ran/Random3.C Random3.h Random.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Random4.o : sim/ran/Random4.C Random4.h Random.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Graph.o : sim/dyn/Graph.C Graph.h Types.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+GraphND1.o : sim/dyn/GraphND1.C Graph.h GraphND1.h Types.h Errors.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+DiGraph1.o : sim/dyn/DiGraph1.C Graph.h DiGraph1.h Types.h Errors.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Point.o : sim/dyn/Point.C Point.h Errors.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Utilities.o : sim/utl/Utilities.C Utilities.h Point.h Types.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Clock.o : sim/utl/Clock.C Clock.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Input.o : sim/ios/Input.C Input.h Graph.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+InputParam.o : sim/ios/InputParam.C InputParam.h Input.h 
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Output.o : sim/ios/Output.C Output.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+RWState.o : sim/rw/RWState.C RWState.h Types.h Point.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+RWRule.o : sim/rw/RWRule.C RWRule.h Agent.h Graph.h Types.h Random1.h Random2.h Random3.h Random4.h Random.h Errors.h Point.h RWState.h RWTypes.h RWUtil.h Utilities.h RWErrors.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+RWIn.o : sim/rw/RWIn.C RWIn.h Input.h Graph.h Agent.h Point.h RWState.h RWTypes.h Random.h Random1.h Random4.h Types.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+RWOut.o : sim/rw/RWOut.C RWOut.h Output.h Point.h RWState.h RWTypes.h Types.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+RWUtil.o : sim/rw/RWUtil.C RWUtil.h Point.h RWState.h RWTypes.h Random1.h Random2.h Random3.h Random4.h Random.h Graph.h Errors.h Agent.h Types.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+RWMain.o : sim/rw/RWMain.C RWMain.h Agent.h Random1.h Random2.h Random3.h Random4.h Random.h Discrete.h GraphND1.h DiGraph1.h Graph.h Clock.h Utilities.h Types.h Errors.h Point.h RWState.h RWTypes.h RWErrors.h RWRule.h RWIn.h RWOut.h RWUtil.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+# phony targets:
+.PHONY : clean
+
+clean :
+	@ echo "Deleting" $(name) $(objects)
+	@ rm -rf ../bin/$(name) $(objs_with_path)

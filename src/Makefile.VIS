@@ -1,0 +1,113 @@
+# 
+# 	Filename : Makefile.VIS
+#
+#	Author : Suhan Ree
+#	Date   : 09-16-2010
+
+# Sub-Makefile for the VIS module of RW2.
+# This file will be executed in the 'RW2' directory by the main Makefile.
+#	(Or you can use make this module by executing 'make -f Makefile.STA'
+#	 from the directory this makefile is in. The variables exported from
+#	 the main Makefile can be given in the command line.)
+# Some variables (COMPILER, MPI, DEBUG, OPTIMIZE) are exported from the main makefile.
+
+ifndef COMPILER
+   COMPILER=GCC
+endif
+
+# When MPI is NOT used, assigning the compiler (GCC=g++, CC=c++)
+# When MPI is used, assigning the MPI compilers (hcc, mpicc)
+ifeq ($(MPI),none)
+   ifeq ($(COMPILER),GCC)
+   	CXX = g++
+   else 
+   	ifeq ($(COMPILER),CC)
+      	   CXX = c++
+   	endif
+   endif
+else
+   ifeq ($(MPI),LAM)
+   	CXX = /usr/bin/hcp
+   else
+   	ifeq ($(MPI),MPICH)
+	   CXX = /usr/local/mpich/bin/mpiCC
+	endif
+   endif
+endif
+
+# setting paths for files used as targets or dependencies.
+vpath %.o ../obj
+vpath %.h ../include
+vpath %   ../bin
+
+# defining the name of the object files.
+objects += Random4.o
+objects += Input.o InputParam.o Output.o
+objects += Utilities.o Point.o
+objects += GetGraphs.o
+
+# defining the name of the header files.
+headers += Random.h Random4.h
+headers += Input.h InputParam.h Output.h
+headers += Utilities.h Types.h Point.h
+
+# The name of the executable.
+name = GetGraphs
+
+# For debugging, names of object files will have the '.debug.o' extension 
+# (not implemented at this point, execute 'make clean' first before using DEBUG=1)
+ifeq ($(DEBUG),1)
+#   objects := $($(objects):.o,.debug.o)
+   name := $(addsuffix .debug, $(name))
+   CXXFLAGS := $(CXXFLAGS) -g
+else
+   CXXFLAGS := -O$(OPTIMIZE) 	# When not debugging, turn the optimization on.
+endif
+
+# path for the header files.
+CXXFLAGS += -I../include
+
+#defining object filenames with correct paths.
+objs_with_path := $(addprefix ../obj/,$(objects))
+
+# Primary Targets:
+
+$(name) : $(objects)
+	@ echo $(name) " (linking...)"
+	@ $(CXX) $(CXXFLAGS) $(objs_with_path) -o ../bin/$(name)
+	@ cp ../bin/$(name) ~/bin
+
+Random4.o : sim/ran/Random4.C Random4.h Random.h Types.h Errors.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Utilities.o : sim/utl/Utilities.C Utilities.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Point.o : sim/dyn/Point.C Point.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Input.o : sim/ios/Input.C Input.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+InputParam.o : sim/ios/InputParam.C InputParam.h Input.h 
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+Output.o : sim/ios/Output.C Output.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+GetGraphs.o : vis/GetGraphs.C Random.h Random4.h Utilities.h Types.h Point.h
+	@ echo $(@F)
+	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
+
+# phony targets:
+.PHONY : clean
+
+clean :
+	@ echo "Deleting" $(name) $(objects)
+	@ rm -rf ../bin/$(name) $(objs_with_path)
