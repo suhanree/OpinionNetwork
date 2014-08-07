@@ -2,7 +2,7 @@
 # 	Filename : Makefile.SIM
 #
 #	Author : Suhan Ree
-#	Date   : 06-04-2004
+#	Date   : 08-07-2014
 
 # Sub-Makefile for the SIM module of RW.
 # This file will be executed in the 'RW' directory by the main Makefile.
@@ -83,11 +83,13 @@ objs_with_path := $(addprefix ../obj/,$(objects))
 
 $(name) : $(objects)
 	@ echo $(name) " (linking...)"
+	@ if [ ! -d "../bin" ]; then mkdir ../bin; fi
 	@ $(CXX) $(CXXFLAGS) $(objs_with_path) -o ../bin/$(name)
 #       @ cp ../bin/$(name) ~/bin
 
 Random1.o : sim/ran/Random1.C Random1.h Random.h Errors.h
 	@ echo $(@F)
+	@ if [ ! -d "../obj" ]; then mkdir ../obj; fi
 	@ $(CXX) $(CXXFLAGS) -c $< -o ../obj/$@
 
 Random2.o : sim/ran/Random2.C Random2.h Random.h
